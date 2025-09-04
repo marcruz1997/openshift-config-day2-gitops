@@ -1,16 +1,18 @@
-# Automatizando a criação de Applications no Argo CD com Helm
+# Automatizando Applications do Argo CD com Helm
 
-Quando começamos a trabalhar com **GitOps** e **Argo CD**, um dos primeiros desafios é organizar as aplicações que vamos gerenciar.  
-Cada aplicação no Argo CD precisa de um recurso `Application`, que diz **de onde buscar os manifests**, **para onde aplicar** e **como sincronizar**.  
+Se você já trabalhou com **Argo CD**, sabe que cada aplicação precisa de um recurso `Application` que informa:
 
-Criar esses `Applications` manualmente funciona, mas conforme o número de apps cresce, fica difícil manter tudo padronizado.  
-É aqui que entra o **Helm**: podemos usar um **template genérico** para gerar vários `Applications` de forma automática.  
+- de onde buscar os manifests,
+- para qual cluster e namespace aplicar,
+- como sincronizar as alterações.
+
+Quando a quantidade de apps começa a crescer, criar esses arquivos manualmente vira um pesadelo. É aí que o **Helm** entra em cena: com um template, você consegue gerar todos os `Applications` automaticamente a partir de um `values.yaml`.
 
 ---
 
 ## Como funciona o template
 
-O template percorre uma lista de aplicações definida no `values.yaml` e gera para cada uma delas um recurso `Application`:
+O template percorre a lista de aplicações definida no `values.yaml` e gera para cada uma delas um `Application`. Ele também trata labels, annotations, syncPolicy e finalizers, caso você queira customizar.  
 
 ```yaml
 {{- $root := . -}}
