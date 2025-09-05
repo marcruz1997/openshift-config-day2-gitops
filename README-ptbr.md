@@ -479,47 +479,6 @@ Isso permite gerenciar aplicações (via Helm) e recursos de cluster (via Kustom
 
 ---
 
-### Diagrama da Estrutura GitOps (Apps of Apps)
-
-```mermaid
-graph TD
-
-subgraph Repo["📂 Git Repository"]
-    A["applications/\n(Helm Applications)"]
-    B["projects/\n(Helm AppProjects)"]
-    C["kustomize/\n(Base + Overlays)"]
-end
-
-subgraph Argo["🚀 Argo CD - Apps of Apps"]
-    R["Root Application"]
-    P["AppProjects"]
-    X["Applications"]
-    K["Cluster Configs via Kustomize"]
-end
-
-subgraph Cluster["☸️ OpenShift/Kubernetes"]
-    N["Namespaces"]
-    O["OAuth Providers\n(HTPasswd/LDAP)"]
-    RB["RBAC\n(ClusterRoleBindings)"]
-    SC["Secrets & ConfigMaps"]
-    APP["Aplicações em execução"]
-end
-
-Repo --> Argo
-Argo --> Cluster
-
-R --> P
-R --> X
-R --> K
-
-P -->|Define escopo| Cluster
-X -->|Deploy apps| APP
-K -->|Aplica patches| O
-K -->|Aplica patches| RB
-K -->|Aplica configs| SC
-
----
-
 ### Estrutura do Repositório GitOps
 
 ![Árvore](images/tree.png)
