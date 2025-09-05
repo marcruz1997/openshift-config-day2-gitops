@@ -474,71 +474,38 @@ Essa abordagem permite que tanto aplicações quanto recursos críticos de clust
 
 # Estrutura GitOps com Apps of Apps e Overlays por Ambiente
 
-```mermaid
-graph TD
-    %% =====================
-    %% GIT REPOSITORY
-    %% =====================
-    subgraph Git[📂 Git Repository]
-        direction TB
+flowchart TD
+  subgraph Git[Git Repository]
+    direction TB
+    HelmCharts[Helm charts\n(applications/ & projects/)]
+    KustomizeOverlays[Kustomize overlays\n(base/, overlays/dev, overlays/staging, overlays/prod)]
+  end
 
-        subgraph HelmCharts[📦 Helm Charts]
-            ApplicationsHelm[applications/ (AppProjects + Applications)]
-            ProjectsHelm[projects/ (AppProject definitions)]
-        end
+  subgraph ArgoCD[Argo CD]
+    Root[Root App\n(Apps of Apps)]
+    AppProjects[AppProjects\n(projects/)]
+    ChildApps[Applications\n(child apps)]
+    ClusterConfigs[Kustomize\nCluster Resources]
+  end
 
-        subgraph KustomizeOverlays[🛠️ Kustomize Overlays]
-            Base[base/ (Recursos comuns: OAuth, RBAC, Configs)]
-            Dev[overlays/dev/]
-            Staging[overlays/staging/]
-            Prod[overlays/prod/]
-        end
-    end
+  subgraph Cluster[OpenShift / Kubernetes]
+    Namespaces[Namespaces]
+    OAuth[OAuth\n(HTPasswd / LDAP)]
+    RBAC[RBAC\n(ClusterRoleBindings)]
+    Secrets[Secrets & ConfigMaps]
+    Apps[Deployed Applications]
+  end
 
-    %% =====================
-    %% ARGO CD
-    %% =====================
-    subgraph ArgoCD[🚀 Argo CD]
-        direction TB
-        RootApp[Root Application (App of Apps)]
-        AppProjects[AppProjects]
-        ChildApps[Applications]
-        ClusterConfigs[Cluster Resources (via Kustomize)]
-    end
+  Git --> Root
+  HelmCharts --> Root
+  KustomizeOverlays --> ClusterConfigs
 
-    %% =====================
-    %% CLUSTER
-    %% =====================
-    subgraph Cluster[☸️ Kubernetes/OpenShift Cluster]
-        direction TB
-        Apps[Aplicações em Namespaces]
-        OAuth[OAuth Identity Providers (HTPasswd / LDAP)]
-        RBAC[ClusterRoleBindings & Roles]
-        Secrets[Secrets & ConfigMaps]
-        Namespaces[Namespaces de destino]
-    end
+  Root --> AppProjects
+  Root --> ChildApps
+  Root --> ClusterConfigs
 
-    %% =====================
-    %% CONNECTIONS
-    %% =====================
-    Git --> RootApp
-    ApplicationsHelm --> RootApp
-    ProjectsHelm --> AppProjects
-
-    RootApp --> AppProjects
-    RootApp --> ChildApps
-    RootApp --> ClusterConfigs
-
-    KustomizeOverlays --> ClusterConfigs
-    Base --> Dev
-    Base --> Staging
-    Base --> Prod
-
-    ChildApps --> Apps
-    ClusterConfigs --> OAuth
-    ClusterConfigs --> RBAC
-    ClusterConfigs --> Secrets
-    ClusterConfigs --> Namespaces
-
-
-
+  ChildApps --> Apps
+  ClusterConfigs --> OAuth
+  ClusterConfigs --> RBAC
+  ClusterConfigs --> Secrets
+  ClusterConfigs --> Namespaces
