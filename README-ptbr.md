@@ -478,30 +478,31 @@ Quando usamos **GitOps** em OpenShift ou Kubernetes, uma prática comum é organ
 Isso permite gerenciar aplicações (via Helm) e recursos de cluster (via Kustomize) de forma declarativa, versionada e auditável.
 
 ---
+
 ### Diagrama da Estrutura GitOps (Apps of Apps)
 
 ```mermaid
 graph TD
 
-subgraph Repo[📂 Git Repository]
-    A[applications/ <br> (Helm Applications)]
-    B[projects/ <br> (Helm AppProjects)]
-    C[kustomize/ <br> (Base + Overlays)]
+subgraph Repo["📂 Git Repository"]
+    A["applications/\n(Helm Applications)"]
+    B["projects/\n(Helm AppProjects)"]
+    C["kustomize/\n(Base + Overlays)"]
 end
 
-subgraph Argo[🚀 Argo CD - Apps of Apps]
-    R[Root Application]
-    P[AppProjects]
-    X[Applications]
-    K[Cluster Configs via Kustomize]
+subgraph Argo["🚀 Argo CD - Apps of Apps"]
+    R["Root Application"]
+    P["AppProjects"]
+    X["Applications"]
+    K["Cluster Configs via Kustomize"]
 end
 
-subgraph Cluster[☸️ OpenShift/Kubernetes]
-    N[Namespaces]
-    O[OAuth Providers <br>(HTPasswd/LDAP)]
-    RB[RBAC <br>(ClusterRoleBindings)]
-    SC[Secrets & ConfigMaps]
-    APP[Aplicações em execução]
+subgraph Cluster["☸️ OpenShift/Kubernetes"]
+    N["Namespaces"]
+    O["OAuth Providers\n(HTPasswd/LDAP)"]
+    RB["RBAC\n(ClusterRoleBindings)"]
+    SC["Secrets & ConfigMaps"]
+    APP["Aplicações em execução"]
 end
 
 Repo --> Argo
@@ -516,4 +517,4 @@ X -->|Deploy apps| APP
 K -->|Aplica patches| O
 K -->|Aplica patches| RB
 K -->|Aplica configs| SC
-````
+
