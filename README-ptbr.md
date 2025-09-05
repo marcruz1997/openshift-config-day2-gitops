@@ -520,84 +520,79 @@ K -->|Aplica configs| SC
 
 ---
 
-#### Exemplo de estrutura de Git para realizar as configurações de Day2
-
 ### Estrutura do Repositório GitOps
 
 ```mermaid
 graph TD
 
-subgraph clusters
-    subgraph hub-cluster
-        subgraph apps
+subgraph "clusters"
+    subgraph "hub-cluster"
+        subgraph "apps"
             A1["Chart.yaml"]
-            A2["templates/ (apps-of-apps.yaml, project.yaml)"]
+            A2["templates (apps-of-apps.yaml, project.yaml)"]
             A3["values.yaml"]
         end
-        subgraph etcd-bkp
+        subgraph "etcd-bkp"
             E1["cluster-role-binding.yaml"]
             E2["cluster-role.yaml"]
             E3["cronjob.yaml"]
             E4["sa.yaml"]
         end
-        subgraph image-registry
+        subgraph "image-registry"
             IR1["imageregistry-config.yaml"]
             IR2["kustomization.yaml"]
             IR3["pvc.yaml"]
         end
-        subgraph logging
+        subgraph "logging"
             L1["kustomization.yaml"]
         end
-        subgraph machines
+        subgraph "machines"
             M1["kustomization.yaml"]
-            subgraph infra
+            subgraph "infra"
                 MI1["machineset-infra.yaml"]
                 MI2["mcp-infra.yaml"]
-                MI3["kustomization.yaml"]
             end
-            subgraph master
+            subgraph "master"
                 MM1["machineset-master.yaml"]
                 MM2["mcp-master.yaml"]
-                MM3["kustomization.yaml"]
             end
-            subgraph worker
+            subgraph "worker"
                 MW1["machineset-worker.yaml"]
                 MW2["mcp-worker.yaml"]
-                MW3["kustomization.yaml"]
             end
         end
-        subgraph monitoring
+        subgraph "monitoring"
             MON1["kustomization.yaml"]
         end
-        subgraph oauth
+        subgraph "oauth"
             O1["kustomization.yaml"]
         end
     end
 end
 
-subgraph components
-    subgraph logging
+subgraph "components"
+    subgraph "logging"
         CL1["base/kustomization.yaml"]
         CL2["logging-cluster.yaml"]
     end
-    subgraph monitoring
+    subgraph "monitoring"
         CM1["base/cm-monitoring.yaml"]
         CM2["base/kustomization.yaml"]
-        subgraph overlays
-            ODEV["dev/ (baremetal, hub, virt)"]
-            OHML["hml/ (baremetal, hub, virt)"]
-            OPRD["prd/ (baremetal, hub, virt)"]
+        subgraph "overlays"
+            ODEV["dev (baremetal, hub, virt)"]
+            OHML["hml (baremetal, hub, virt)"]
+            OPRD["prd (baremetal, hub, virt)"]
         end
     end
-    subgraph oauth
+    subgraph "oauth"
         OB1["base/oauth-cluster.yaml"]
-        subgraph overlays
-            OHT["htpass/ (users.htpasswd, ldap-ca.crt, patches)"]
-            OLD["ldap/ (patches, kustomization.yaml)"]
+        subgraph "overlays"
+            OHT["htpass (users.htpasswd, ldap-ca.crt, patches)"]
+            OLD["ldap (patches, kustomization.yaml)"]
         end
     end
-    subgraph projects
+    subgraph "projects"
         PR1["appset-self-provisioner.yaml"]
-        PR2["base/ (crb, templates, kustomization.yaml)"]
+        PR2["base (crb, templates, kustomization.yaml)"]
     end
 end
