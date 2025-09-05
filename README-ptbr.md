@@ -261,7 +261,7 @@ applications:
 
 ---
 
-## 5. Conclusão
+## 5. Resumo
 
 Com esse conjunto de templates e o `Chart.yaml`:
 
@@ -462,7 +462,7 @@ ArgoCD --> Cluster[Kubernetes/OpenShift Cluster]
 
 ---
 
-## 9. Conclusão
+## 9. Resumo
 
 Essa abordagem permite que tanto aplicações quanto recursos críticos de cluster sejam:
 
