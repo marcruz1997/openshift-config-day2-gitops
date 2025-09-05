@@ -472,25 +472,35 @@ Essa abordagem permite que tanto aplicações quanto recursos críticos de clust
 
 > Resumindo: o uso de **patches, generators e overlays** é a técnica principal para gerenciar recursos de cluster de forma declarativa e escalável.
 
-# Estrutura GitOps com Apps of Apps e Overlays por Ambiente
+# Estrutura GitOps com Apps of Apps, Helm e Kustomize
 
+Quando usamos **GitOps** em OpenShift ou Kubernetes, uma prática comum é organizar o repositório em torno do padrão **Apps of Apps** do Argo CD.  
+Isso permite gerenciar aplicações (via Helm) e recursos de cluster (via Kustomize) de forma declarativa, versionada e auditável.
+
+---
+
+## 📊 Diagrama da Estrutura (Mermaid)
+
+> Se o seu renderizador Markdown suportar **Mermaid**, o diagrama abaixo será exibido automaticamente:
+
+```mermaid
 flowchart TD
-  subgraph Git[Git Repository]
+  subgraph Git[📂 Git Repository]
     direction TB
-    HelmCharts[Helm charts\n(applications/ & projects/)]
-    KustomizeOverlays[Kustomize overlays\n(base/, overlays/dev, overlays/staging, overlays/prod)]
+    HelmCharts[📦 Helm charts\n(applications/ & projects/)]
+    KustomizeOverlays[🛠️ Kustomize overlays\n(base/, dev/, staging/, prod/)]
   end
 
-  subgraph ArgoCD[Argo CD]
+  subgraph ArgoCD[🚀 Argo CD]
     Root[Root App\n(Apps of Apps)]
-    AppProjects[AppProjects\n(projects/)]
-    ChildApps[Applications\n(child apps)]
-    ClusterConfigs[Kustomize\nCluster Resources]
+    AppProjects[AppProjects]
+    ChildApps[Applications]
+    ClusterConfigs[Cluster Resources\n(via Kustomize)]
   end
 
-  subgraph Cluster[OpenShift / Kubernetes]
+  subgraph Cluster[☸️ OpenShift/Kubernetes Cluster]
     Namespaces[Namespaces]
-    OAuth[OAuth\n(HTPasswd / LDAP)]
+    OAuth[OAuth Providers\n(HTPasswd / LDAP)]
     RBAC[RBAC\n(ClusterRoleBindings)]
     Secrets[Secrets & ConfigMaps]
     Apps[Deployed Applications]
