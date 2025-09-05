@@ -470,4 +470,74 @@ Essa abordagem permite que tanto aplicações quanto recursos críticos de clust
 * Aplicados declarativamente via Argo CD
 * Configurados e transformados de forma reutilizável com Kustomize
 
-> Resumindo: o uso de **patches, generators e overlays** é a técnica principal para gerenciar recursos de cluster de forma declarativa e escalável, não apenas HTPasswd.
+> Resumindo: o uso de **patches, generators e overlays** é a técnica principal para gerenciar recursos de cluster de forma declarativa e escalável.
+
+# Estrutura GitOps com Apps of Apps e Overlays por Ambiente
+
+```mermaid
+graph TD
+    %% =====================
+    %% GIT REPOSITORY
+    %% =====================
+    subgraph Git[📂 Git Repository]
+        direction TB
+
+        subgraph HelmCharts[📦 Helm Charts]
+            ApplicationsHelm[applications/ (AppProjects + Applications)]
+            ProjectsHelm[projects/ (AppProject definitions)]
+        end
+
+        subgraph KustomizeOverlays[🛠️ Kustomize Overlays]
+            Base[base/ (Recursos comuns: OAuth, RBAC, Configs)]
+            Dev[overlays/dev/]
+            Staging[overlays/staging/]
+            Prod[overlays/prod/]
+        end
+    end
+
+    %% =====================
+    %% ARGO CD
+    %% =====================
+    subgraph ArgoCD[🚀 Argo CD]
+        direction TB
+        RootApp[Root Application (App of Apps)]
+        AppProjects[AppProjects]
+        ChildApps[Applications]
+        ClusterConfigs[Cluster Resources (via Kustomize)]
+    end
+
+    %% =====================
+    %% CLUSTER
+    %% =====================
+    subgraph Cluster[☸️ Kubernetes/OpenShift Cluster]
+        direction TB
+        Apps[Aplicações em Namespaces]
+        OAuth[OAuth Identity Providers (HTPasswd / LDAP)]
+        RBAC[ClusterRoleBindings & Roles]
+        Secrets[Secrets & ConfigMaps]
+        Namespaces[Namespaces de destino]
+    end
+
+    %% =====================
+    %% CONNECTIONS
+    %% =====================
+    Git --> RootApp
+    ApplicationsHelm --> RootApp
+    ProjectsHelm --> AppProjects
+
+    RootApp --> AppProjects
+    RootApp --> ChildApps
+    RootApp --> ClusterConfigs
+
+    KustomizeOverlays --> ClusterConfigs
+    Base --> Dev
+    Base --> Staging
+    Base --> Prod
+
+    ChildApps --> Apps
+    ClusterConfigs --> OAuth
+    ClusterConfigs --> RBAC
+    ClusterConfigs --> Secrets
+    ClusterConfigs --> Namespaces
+
+
