@@ -271,3 +271,203 @@ Com esse conjunto de templates e o `Chart.yaml`:
 4. Mantém segurança, controle de acesso e facilidade de manutenção.
 
 A combinação **Helm + Argo CD** é ideal para equipes que usam GitOps em Kubernetes, permitindo **automatização, padronização e escalabilidade** de maneira confiável.
+
+
+# Gerenciamento Declarativo de Recursos de Cluster com Kustomize e Argo CD
+
+Quando usamos **GitOps** em Kubernetes/OpenShift, nem só as aplicações precisam de deploy automatizado.
+Também é necessário gerenciar recursos de **cluster**, como autenticação, permissões e configurações críticas, de forma **declarativa e auditável**.
+
+Neste guia, explicaremos a técnica utilizada para fazer isso de maneira robusta e replicável, usando **Kustomize** junto com **Helm e Argo CD**.
+
+---
+
+## 1. Conceito central: GitOps para recursos de cluster
+
+A ideia é manter **todos os recursos do cluster versionados no Git**, aplicados automaticamente pelo Argo CD:
+
+* **Aplicações** → Helm templates + AppProjects + Applications
+* **Configurações de cluster** → Kustomize overlays + patches + generators
+
+> Com isso, tudo que é aplicado no cluster tem um histórico completo no Git, garantindo auditabilidade e consistência.
+
+---
+
+## 2. Estrutura Kustomize
+
+O Kustomize permite organizar recursos e aplicar **overlays e patches**, sem duplicar YAML.
+
+Exemplo de base + overlay:
+
+```yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../../components/oauth/overlays/htpass
+```
+
+* **resources** → aponta para outros diretórios ou arquivos YAML base.
+* Cada overlay pode adicionar, modificar ou remover recursos.
+* Isso permite ter diferentes configurações para `dev`, `homolog` e `prod`.
+
+---
+
+## 3. Patches e transformações
+
+Kustomize usa **patches** para modificar recursos existentes de forma declarativa.
+
+Exemplo genérico de patch:
+
+```yaml
+patches:
+  - path: oauth-htpass-patch.yaml
+    target:
+      group: config.openshift.io
+      kind: OAuth
+      name: cluster
+      version: v1
+- op: add
+  path: /spec/identityProviders/-
+  value:
+    name: Local
+    mappingMethod: claim
+    type: HTPasswd
+    htpasswd:
+      fileData:
+        name: htpass-secret
+```
+
+* `target` → define qual recurso será alterado.
+* `op` e `path` → operação de patch no YAML original.
+* `value` → o conteúdo que será adicionado ou modificado.
+
+> Técnica aplicável para qualquer recurso: OAuth, CRDs, ClusterRoleBindings, ConfigMaps, Secrets, etc.
+
+---
+
+## 4. SecretGenerator e ConfigMapGenerator
+
+Quando precisamos gerar Secrets ou ConfigMaps dinamicamente:
+
+```yaml
+generatorOptions:
+  disableNameSuffixHash: true
+
+secretGenerator:
+  - files:
+      - htpasswd=files/users.htpasswd
+    name: htpass-secret
+    namespace: openshift-config
+    type: Opaque
+
+configMapGenerator:
+  - files:
+      - ca.crt=files/ldap-ca.crt
+    name: ca-ldap
+    namespace: openshift-config
+```
+
+* **SecretGenerator** → cria Secrets a partir de arquivos ou literais.
+* **ConfigMapGenerator** → cria ConfigMaps a partir de arquivos.
+* **disableNameSuffixHash** → mantém nomes consistentes, útil para patches e referências externas.
+
+> Técnica geral: qualquer arquivo necessário para configuração do cluster pode ser versionado e transformado em Secret ou ConfigMap via Kustomize.
+
+---
+
+## 5. ClusterRoleBindings e permissões
+
+Recursos como **ClusterRoleBinding** podem ser declarados e aplicados via GitOps:
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cluster-admin-0
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: admin
+```
+
+* Técnica: manter permissões críticas versionadas no Git.
+* Pode ser aplicada junto com patch generators, garantindo consistência entre clusters.
+
+---
+
+## 6. Multi-identity provider (HTPasswd + LDAP)
+
+A técnica de patches permite adicionar múltiplos identity providers:
+
+```yaml
+- op: add
+  path: /spec/identityProviders/-
+  value:
+    name: LDAP LAB
+    mappingMethod: claim
+    type: LDAP
+    ldap:
+      attributes:
+        id: [sAMAccountName]
+        email: [mail]
+        name: [cn]
+        preferredUsername: [sAMAccountName]
+      bindDN: 'CN=ldap-reader,OU=Service Accounts,DC=lab,DC=corp'
+      bindPassword:
+        name: ldap-secret
+      ca:
+        name: ca-ldap
+      insecure: false
+      url: 'ldaps://ad.lab.corp:636/DC=lab,DC=corp?sAMAccountName?sub?(objectClass=person)'
+```
+
+* Técnica reutiliza **patch + Secret + ConfigMap**.
+* Pode ser combinada com HTPasswd ou outros identity providers.
+* Permite manter configuração do cluster **totalmente declarativa**.
+
+---
+
+## 7. Integração com Argo CD e Helm
+
+Fluxo completo:
+
+1. **Helm** → gera templates de Apps (AppProjects + Applications)
+2. **Kustomize** → monta overlays e aplica patches nos recursos de cluster
+3. **Argo CD** → aplica tudo de forma declarativa, garantindo GitOps
+4. **Anotações Argo CD** → `IgnoreExtraneous` ou `Prune=false` evitam conflitos com recursos gerenciados nativamente pelo OpenShift
+
+```mermaid
+graph LR
+Git[Git Repository] --> Helm[Helm Templates: Applications & AppProjects]
+Git --> Kustomize[Kustomize: Cluster Resources & Patches]
+Helm --> ArgoCD[Argo CD]
+Kustomize --> ArgoCD
+ArgoCD --> Cluster[Kubernetes/OpenShift Cluster]
+```
+
+---
+
+## 8. Benefícios da técnica
+
+* Permite **gerenciar recursos de cluster** e aplicações com GitOps.
+* Facilita **replicação entre ambientes** (dev, staging, prod).
+* Mantém **histórico completo de alterações** no Git.
+* Técnica genérica: aplica-se a **HTPasswd, LDAP, CRDs, RBAC, ConfigMaps, Secrets**.
+* Reduz erros de configuração manual e garante **consistência declarativa**.
+
+---
+
+## 9. Conclusão
+
+Essa abordagem permite que tanto aplicações quanto recursos críticos de cluster sejam:
+
+* Versionados no Git
+* Aplicados declarativamente via Argo CD
+* Configurados e transformados de forma reutilizável com Kustomize
+
+> Resumindo: o uso de **patches, generators e overlays** é a técnica principal para gerenciar recursos de cluster de forma declarativa e escalável, não apenas HTPasswd.
