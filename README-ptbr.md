@@ -482,3 +482,7 @@ Isso permite gerenciar aplicações (via Helm) e recursos de cluster (via Kustom
 ### Estrutura do Repositório GitOps
 
 ![Árvore](images/tree.png)
+
+### Link do repositório exemplo
+
+https://github.com/marcruz1997/git-ops-testes
