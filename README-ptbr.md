@@ -478,44 +478,42 @@ Quando usamos **GitOps** em OpenShift ou Kubernetes, uma prática comum é organ
 Isso permite gerenciar aplicações (via Helm) e recursos de cluster (via Kustomize) de forma declarativa, versionada e auditável.
 
 ---
-
-## 📊 Diagrama da Estrutura (Mermaid)
-
-> Se o seu renderizador Markdown suportar **Mermaid**, o diagrama abaixo será exibido automaticamente:
+### Diagrama da Estrutura GitOps (Apps of Apps)
 
 ```mermaid
-flowchart TD
-  subgraph Git[📂 Git Repository]
-    direction TB
-    HelmCharts[📦 Helm charts\n(applications/ & projects/)]
-    KustomizeOverlays[🛠️ Kustomize overlays\n(base/, dev/, staging/, prod/)]
-  end
+graph TD
 
-  subgraph ArgoCD[🚀 Argo CD]
-    Root[Root App\n(Apps of Apps)]
-    AppProjects[AppProjects]
-    ChildApps[Applications]
-    ClusterConfigs[Cluster Resources\n(via Kustomize)]
-  end
+subgraph Repo[📂 Git Repository]
+    A[applications/ <br> (Helm Applications)]
+    B[projects/ <br> (Helm AppProjects)]
+    C[kustomize/ <br> (Base + Overlays)]
+end
 
-  subgraph Cluster[☸️ OpenShift/Kubernetes Cluster]
-    Namespaces[Namespaces]
-    OAuth[OAuth Providers\n(HTPasswd / LDAP)]
-    RBAC[RBAC\n(ClusterRoleBindings)]
-    Secrets[Secrets & ConfigMaps]
-    Apps[Deployed Applications]
-  end
+subgraph Argo[🚀 Argo CD - Apps of Apps]
+    R[Root Application]
+    P[AppProjects]
+    X[Applications]
+    K[Cluster Configs via Kustomize]
+end
 
-  Git --> Root
-  HelmCharts --> Root
-  KustomizeOverlays --> ClusterConfigs
+subgraph Cluster[☸️ OpenShift/Kubernetes]
+    N[Namespaces]
+    O[OAuth Providers <br>(HTPasswd/LDAP)]
+    RB[RBAC <br>(ClusterRoleBindings)]
+    SC[Secrets & ConfigMaps]
+    APP[Aplicações em execução]
+end
 
-  Root --> AppProjects
-  Root --> ChildApps
-  Root --> ClusterConfigs
+Repo --> Argo
+Argo --> Cluster
 
-  ChildApps --> Apps
-  ClusterConfigs --> OAuth
-  ClusterConfigs --> RBAC
-  ClusterConfigs --> Secrets
-  ClusterConfigs --> Namespaces
+R --> P
+R --> X
+R --> K
+
+P -->|Define escopo| Cluster
+X -->|Deploy apps| APP
+K -->|Aplica patches| O
+K -->|Aplica patches| RB
+K -->|Aplica configs| SC
+````
